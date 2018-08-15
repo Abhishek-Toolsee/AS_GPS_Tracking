@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">AS_GPS_Tracking</string>
+    <string name="sLongitude">Longitude\u0020:\u0020</string>
+    <string name="sLatitude">Latitude\u0020\u0020\u0020\u0020:\u0020</string>
+</resources>
