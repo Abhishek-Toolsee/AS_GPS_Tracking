@@ -1,90 +1,113 @@
 package com.example.libra.as_gps_tracking;
 
-import android.Manifest;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.location.Location;
-import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
-import android.support.v4.content.ContextCompat;
+import android.util.Log;
 
-public class GPSTracker extends Service implements LocationListener {
+public class GPSTracker extends Service {
 
-    private final int iUPDATE_LOCATION_TIME = 5000;
-    private final int iUPDATE_LOCATION_DISTANCE = 1;
-    private final String sMSG_GPS_NOT_ENABLED = "GPS not enabled.";
-    private final String sMSG_NETWORK_NOT_ENABLED = "Network not enabled.";
-    private final Context _objContext;
+    private static final String TAG = "AS_GPS_Tracking ";
+    private static final int iLOCATION_INTERVAL = 1000;
+    private static final float i_LOCATION_DISTANCE = 0;
 
-    private boolean _isGPSEnabled = false;
-    private boolean _isNetworkEnabled = false;
-    private boolean _isLocationAvailable = false;
+    protected LocationManager _objLocationManager = null;
 
-    private Location _objLocation;
-    protected LocationManager _objLocationManager;
+    public class LocationListener implements android.location.LocationListener{
 
-    public GPSTracker(Context objContext) {
-        this._objContext = objContext;
-    }
+        Location _objLastLocation;
 
-    public Location getLocation() {
-
-        _objLocation = null;
-        _objLocationManager = (LocationManager) _objContext.getSystemService(LOCATION_SERVICE);
-        _isGPSEnabled = _objLocationManager.isProviderEnabled(_objLocationManager.GPS_PROVIDER);
-        _isNetworkEnabled = _objLocationManager.isProviderEnabled(_objLocationManager.NETWORK_PROVIDER);
-
-        try {
-            if (ContextCompat.checkSelfPermission(_objContext, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                    || ContextCompat.checkSelfPermission(_objContext, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                if (_isGPSEnabled){
-                    if (_objLocation == null) {
-                        _objLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, iUPDATE_LOCATION_TIME, iUPDATE_LOCATION_DISTANCE, this);
-                        if (_objLocationManager != null) {
-                            _objLocation = _objLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                        }
-                    }
-                }
-            }
-
-            /* if location is not found from GPS then it will be found from network */
-            if (_objLocation == null) {
-                if (_isNetworkEnabled){
-                    _objLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, iUPDATE_LOCATION_TIME, iUPDATE_LOCATION_DISTANCE, this);
-                    if (_objLocationManager != null) {
-                        _objLocation = _objLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                    }
-                }
-            }
-        } finally {
-
+        public LocationListener(String sProvider){
+            Log.e(TAG, "LocationListener: " + sProvider);
+            _objLastLocation = new Location(sProvider);
         }
-        return _objLocation;
+
+        @Override
+        public void onLocationChanged(Location location) {
+            Log.e(TAG, "onLocationChanged: " + location);
+            _objLastLocation.set(location);
+        }
+
+        @Override
+        public void onStatusChanged(String provider, int status, Bundle extras) {
+            Log.e(TAG, "onStatusChanged: " + provider);
+        }
+
+        @Override
+        public void onProviderEnabled(String provider) {
+            Log.e(TAG, "onProviderEnabled: " + provider);
+        }
+
+        @Override
+        public void onProviderDisabled(String provider) {
+            Log.e(TAG, "onProviderEnabled: " + provider);
+        }
+    }
+
+    LocationListener[] objLocationListeners = new LocationListener[]{
+            new LocationListener(LocationManager.GPS_PROVIDER),
+            new LocationListener(LocationManager.NETWORK_PROVIDER)
+    };
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        Log.e(TAG, "onStartCommand");
+        super.onStartCommand(intent, flags, startId);
+        return START_STICKY;
     }
 
     @Override
-    public void onLocationChanged(Location location) {
+    public void onCreate() {
+        Log.e(TAG, "onCreate");
+        initLocationManager();
+        try{
+            _objLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, iLOCATION_INTERVAL, i_LOCATION_DISTANCE,
+                    objLocationListeners[1]);
+        }
+        catch (SecurityException ex){
+            Log.i(TAG, "fail to request location update, ignore", ex);
+        }
+        catch(IllegalArgumentException ex){
+            Log.d(TAG, "network provider does not exist, " + ex.getMessage());
+        }
 
+        try{
+            _objLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, iLOCATION_INTERVAL, i_LOCATION_DISTANCE,
+                    objLocationListeners[0]);
+        }
+        catch (SecurityException ex){
+            Log.i(TAG, "fail to request location update, ignore", ex);
+        }
+        catch(IllegalArgumentException ex){
+            Log.d(TAG, "gps provider does not exist, " + ex.getMessage());
+        }
     }
 
     @Override
-    public void onStatusChanged(String provider, int status, Bundle extras) {
-
+    public void onDestroy() {
+        Log.e(TAG, "onDestroy");
+        super.onDestroy();
+        if(_objLocationManager != null){
+            for(int i = 0; i < objLocationListeners.length; i++){
+                try{
+                    _objLocationManager.removeUpdates(objLocationListeners[i]);
+                }catch (Exception ex){
+                    Log.i(TAG, "fail of remove location listeners, ignore", ex);
+                }
+            }
+        }
     }
 
-    @Override
-    public void onProviderEnabled(String provider) {
-
-    }
-
-    @Override
-    public void onProviderDisabled(String provider) {
-
+    private void initLocationManager(){
+        Log.e(TAG, "initLocationManager");
+        if(_objLocationManager == null){
+            _objLocationManager = (LocationManager) getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
+        }
     }
 
     @Nullable
