@@ -13,16 +13,22 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.TextView;
 
+import java.io.File;
+
 public class MainActivity extends AppCompatActivity {
 
     //region Private declarations
 
+    private File _objFileInfo;
     private LocationManager _objLocationManager;
     private LocationListener _objLocationListener;
     private TextView _txtvLongitude;
     private TextView _txtvLatitude;
+    private TextView _txtvInfo;
     private Location _objLocation;
-    private GPSTracker _objGPSTracker;
+
+    private Location _objStartLocation = null;
+    private Location _objEndLocation = null;
 
     //endregion
 
@@ -33,11 +39,11 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        _objFileInfo = new File(getString(R.string.sFileInfo));
 
         _txtvLongitude = (TextView) findViewById(R.id.txtvLongitude);
         _txtvLatitude = (TextView) findViewById(R.id.txtvLatitude);
-        _objGPSTracker = new GPSTracker(getApplicationContext());
-        _objLocation = _objGPSTracker.getLocation();
+        _txtvInfo = (TextView) findViewById(R.id.txtvInfo);
 
         _objLocationManager = (LocationManager) this.getSystemService(LOCATION_SERVICE);
         _objLocationListener = new LocationListener() {
@@ -51,6 +57,14 @@ public class MainActivity extends AppCompatActivity {
                     Log.d("Location: ", location.toString());
                     _txtvLongitude.setText(String.format("%s%f", getString(R.string.sLongitude), location.getLongitude()));
                     _txtvLatitude.setText(String.format("%s%f", getString(R.string.sLatitude), location.getLatitude()));
+
+                    _objEndLocation = location;
+                    float dist = _objStartLocation.distanceTo(_objEndLocation);
+                    _objStartLocation = _objEndLocation;
+
+                    _txtvInfo.append(String.format("%n%s%.2f m", getString(R.string.sDistance), dist));
+                    _txtvInfo.append(String.format("%n%s%.2f m/s", getString(R.string.sSpeed), (dist / 10)));
+                    _txtvInfo.append("\n");
 
                 } catch (Exception ex) {
 
@@ -84,7 +98,10 @@ public class MainActivity extends AppCompatActivity {
 
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
         } else {
-            _objLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, _objLocationListener);
+            _objLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10000, 0, _objLocationListener);
+            _objStartLocation = _objLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            _objStartLocation = _objLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            _objLocation = _objLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
         }
     }
 
@@ -95,7 +112,7 @@ public class MainActivity extends AppCompatActivity {
         if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                     == PackageManager.PERMISSION_GRANTED) {
-                _objLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, _objLocationListener);
+                _objLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10000, 0, _objLocationListener);
             }
         }
     }
