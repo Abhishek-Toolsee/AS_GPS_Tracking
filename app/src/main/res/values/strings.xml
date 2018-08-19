@@ -1,9 +1,11 @@
 <resources>
     <string name="app_name">AS_GPS_Tracking</string>
-    <string name="sLongitude">Longitude\u0020:\u0020</string>
-    <string name="sLatitude">Latitude\u0020\u0020\u0020\u0020:\u0020</string>
-    <string name="sInfo">Info\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0020:</string>
-    <string name="sDistance">Distance\u0020\u0020\u0020:</string>
-    <string name="sSpeed">Speed\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0020:</string>
-    <string name="sFileInfo">info</string>
+    <string name="sTextviewLongitude">Longitude\u0020:\u0020</string>
+    <string name="sTextviewLatitude">Latitude\u0020\u0020\u0020\u0020:\u0020</string>
+    <string name="sTextviewInfo">Info\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0020:</string>
+    <string name="sStartService">Start Service</string>
+    <string name="sStopService">Stop Service</string>
+    <string name="sIntentFilterLocationUpdate">location_update</string>
+    <string name="sIntentKeyLongitude">longitude</string>
+    <string name="sIntentKeyLatitude">latitude</string>
 </resources>
